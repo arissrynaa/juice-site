@@ -6,6 +6,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -108,6 +109,23 @@ function serveFile(res, filePath, status = 200) {
   });
 }
 
+// --- auto rebuild: debounced `npm run build` setelah konten diubah via admin ---
+let rebuildTimer = null, rebuilding = false, pendingRebuild = false;
+function scheduleRebuild() {
+  clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(doRebuild, 1500);
+}
+function doRebuild() {
+  if (rebuilding) { pendingRebuild = true; return; }
+  rebuilding = true;
+  console.log('[rebuild] npm run build …');
+  execFile('npm', ['run', 'build'], { cwd: ROOT, timeout: 120000 }, (err) => {
+    rebuilding = false;
+    console.log(err ? '[rebuild] GAGAL: ' + err.message : '[rebuild] selesai');
+    if (pendingRebuild) { pendingRebuild = false; doRebuild(); }
+  });
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
@@ -182,8 +200,9 @@ const server = http.createServer((req, res) => {
       const dest = path.join(ROOT, 'src/content', file + '.json');
       JSON.parse(JSON.stringify(data)); // validasi: harus JSON murni
       fs.writeFileSync(dest, JSON.stringify(data, null, 2) + '\n');
+      scheduleRebuild();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true }));
+      res.end(JSON.stringify({ ok: true, rebuilding: true }));
     });
   }
   if (url.pathname === '/admin/api/delete' && req.method === 'POST') {
@@ -194,6 +213,7 @@ const server = http.createServer((req, res) => {
       if (!m) { res.writeHead(400); return res.end('hanya item menu yang bisa dihapus'); }
       const dest = path.join(ROOT, 'src/content', file + '.json');
       if (fs.existsSync(dest)) fs.unlinkSync(dest);
+      scheduleRebuild();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));
     });
