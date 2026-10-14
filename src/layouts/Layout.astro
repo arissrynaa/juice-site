@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+import site from '../content/settings/site.json';
+
+interface Props { title?: string }
+const { title = `${site.brand} — ${site.slogan}` } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{title}</title>
+  <meta name="description" content={`${site.brand} — jus buah segar, PO H-1 di SMKN 1 Setu. Pesan via WhatsApp.`}/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+  <slot/>
+
+  <!-- Sticky CTA (mobile) -->
+  <div class="md:hidden fixed bottom-0 inset-x-0 z-50 p-3 bg-surface/90 backdrop-blur border-t border-surface-border" style="box-shadow:0 -4px 12px -2px rgba(120,53,15,0.06)">
+    <a href={site.waLink} target="_blank" rel="noopener noreferrer" class="btn-secondary flex items-center justify-center font-bold text-base py-4 rounded-lg">Pesan via WhatsApp</a>
+  </div>
+  <div class="md:hidden h-20"></div>
+
+  <script>
+    // Smooth scroll — id "kontak-&-lokasi" butuh getElementById, bukan CSS selector
+    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+      anchor.addEventListener('click', function (this: HTMLAnchorElement, e: Event) {
+        const id = this.getAttribute('href');
+        if (id && id !== '#') {
+          const target = document.getElementById(decodeURIComponent(id.slice(1)));
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

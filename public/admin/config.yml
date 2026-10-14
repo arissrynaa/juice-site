@@ -1,0 +1,68 @@
+backend:
+  # Saat develop lokal: jalankan `npx decap-server` lalu buka /admin (local_backend: true aktif)
+  # Saat production: pakai GitHub backend + OAuth (lihat README)
+  name: github
+  repo: OWNER/REPO   # TODO: ganti dengan repo GitHub asli, contoh: olivia/fruits-juice-site
+  branch: main
+
+# Aktif hanya di dev server lokal
+local_backend: true
+
+media_folder: public/images
+public_folder: /images
+
+site_url: https://example.pages.dev   # TODO: isi domain final setelah deploy
+logo_url: /images/jus-alpukat.jpg
+
+collections:
+  - name: settings
+    label: Pengaturan Situs
+    files:
+      - name: site
+        label: Konten & Kontak
+        file: src/content/settings/site.json
+        fields:
+          - { label: Nama Brand, name: brand, widget: string }
+          - { label: "Slogan / Headline Hero", name: slogan, widget: string }
+          - { label: "Sub-headline Hero", name: heroSub, widget: text }
+          - { label: "Gambar Hero (public/images/...)", name: heroImage, widget: string }
+          - { label: Badge Hero, name: heroBadge, widget: string }
+          - { label: "Link WhatsApp (wa.me)", name: waLink, widget: string }
+          - { label: "Nomor WA (tampilan)", name: phoneDisplay, widget: string }
+          - { label: URL Instagram, name: instagramUrl, widget: string }
+          - { label: Handle Instagram, name: instagramHandle, widget: string }
+          - { label: Teks Instagram, name: instagramBlurb, widget: text }
+          - { label: Email, name: email, widget: string }
+          - { label: Alamat Lengkap, name: address, widget: text }
+          - { label: "Embed Google Maps (URL)", name: mapsEmbed, widget: string }
+          - { label: Teks Footer, name: footerText, widget: string }
+          - { label: "Judul Section About", name: aboutTitle, widget: string }
+          - { label: Isi About, name: aboutBody, widget: text }
+          - label: 4 Keunggulan
+            name: advantages
+            widget: list
+            fields:
+              - { label: Icon, name: icon, widget: string, hint: "Material Symbols, contoh: nutrition, eco, icecream, local_drink" }
+              - { label: Judul, name: title, widget: string }
+              - { label: Deskripsi, name: desc, widget: text }
+          - label: "Langkah Cara Pesan (3)"
+            name: steps
+            widget: list
+            max: 3
+
+  - name: menu
+    label: Menu Produk
+    folder: src/content/menu
+    create: true
+    format: json
+    slug: '{{slug}}'
+    fields:
+      - { label: Nama Produk, name: name, widget: string }
+      - { label: "Badge (Best Seller / Segera Hadir / kosongkan)", name: badge, widget: string, required: false }
+      - { label: Deskripsi, name: description, widget: text }
+      - { label: Info Gizi, name: nutrition, widget: string, required: false }
+      - { label: "Harga (mis. Rp 13.000, kosongkan jika belum final)", name: price, widget: string, required: false }
+      - { label: "Foto Produk (public/images/...)", name: image, widget: string, required: false }
+      - { label: Alt Text Foto, name: imageAlt, widget: string, required: false }
+      - { label: "Produk Utama (tampil besar di hero & menu)", name: featured, widget: boolean, default: false }
+      - { label: Urutan Tampil, name: order, widget: number, default: 10 }

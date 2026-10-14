@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Design tokens — DESIGN.md (brand palette) */
+@theme {
+  --color-primary: #78350F;
+  --color-primary-hover: #5C280B;
+  --color-secondary: #15803D;
+  --color-tertiary: #EA580C;
+  --color-surface: #FFFDF7;
+  --color-surface-container: #FBF6EE;
+  --color-surface-border: #F3ECE0;
+  --color-card-border: #F0E8DC;
+  --color-on-surface: #3D2E1E;
+  --color-muted: #7C6F64;
+  --color-badge-green-bg: #EBF6EE;
+  --color-badge-citrus-bg: #FFF2EB;
+  --color-badge-citrus-text: #C2410C;
+  --color-badge-cacao-bg: #F5ECE5;
+
+  --font-headline: "Epilogue", sans-serif;
+  --font-body: "Manrope", sans-serif;
+
+  --shadow-lift: 0 8px 24px -4px rgba(120,53,15,0.08), 0 2px 6px -2px rgba(120,53,15,0.04);
+  --shadow-raised: 0 16px 36px -6px rgba(120,53,15,0.14), 0 4px 12px -2px rgba(120,53,15,0.06);
+}
+
+html { scroll-behavior: smooth; }
+h1, h2, h3 { font-family: var(--font-headline); }
+
+.btn-primary {
+  background: var(--color-primary); color: #FFFDF7;
+  border-radius: 0.5rem; padding: 0.75rem 1.5rem; transition: background .2s;
+}
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-primary:focus-visible { outline: 2px solid var(--color-tertiary); outline-offset: 2px; }
+.btn-secondary {
+  background: var(--color-secondary); color: #fff;
+  border-radius: 0.5rem; padding: 0.75rem 1.5rem; transition: background .2s;
+}
+.btn-secondary:hover { background: #0F6B31; }
