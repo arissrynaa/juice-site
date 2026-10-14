@@ -14,17 +14,18 @@ Landing page satu halaman, dibangun ulang dari `landing_page_fruits_juice_r_f/in
 
 ```bash
 npm install
-git init && git add -A && git commit -m init   # decap-server butuh folder berupa git repo
 npm run build
-node scripts/admin-auth.mjs   # serve dist + form login di port 3000
-npx decap-server              # backend CMS lokal di port 8081 (log: /tmp/decap.log)
+node scripts/admin-auth.mjs   # serve dist + form login + admin editor di port 3000
 ```
 
 - Situs: `http://localhost:3000/`
-- Admin: `http://localhost:3000/admin` → form login password (hash di `.admin-pass`).
+- Admin: `http://localhost:3000/admin` → form login (password ter-hash di `.admin-pass`).
   Ganti password: `node scripts/admin-auth.mjs hash <password-baru>`
-- Di editor CMS: **Publish** (bukan Save — Save cuma draft di localStorage) yang menulis ke file JSON.
-- `decap-server` harus jalan sebelum login; kalau tidak, CMS jatuh ke layar "Login with GitHub" — abaikan & jalankan decap-server lalu refresh.
+- Admin editor = halaman custom (`scripts/admin.html`), TANPA Decap/GitHub: 2 tab
+  (Pengaturan Situs & Menu Produk), tombol Simpan langsung menulis ke
+  `src/content/settings/site.json` / `src/content/menu/*.json`.
+- Setelah edit, jalankan `npm run build` agar tampilan publik ikut ter-update.
+- Keamanan admin sudah dites (login salah, cookie palsu, brute-force → 429).
 
 ## Deploy (gratis — Cloudflare Pages / Netlify)
 

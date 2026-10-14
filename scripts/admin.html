@@ -130,7 +130,12 @@ function renderMenu() {
       ${field('Deskripsi', m.description, 'description', true)}
       ${field('Info Gizi', m.nutrition, 'nutrition')}
       ${field('Harga (mis. Rp 13.000 — kosongkan jika belum final)', m.price, 'price')}
-      ${field('Foto (path /images/..., kosongkan jika pakai logo)', m.image, 'image')}
+      <label>Foto Produk (upload file, kosongkan jika pakai logo)</label>
+      <div class="row">
+        <input type="file" accept="image/*" data-upload="${slug}" onchange="uploadImage('${slug}', this)"/>
+      </div>
+      ${m.image ? `<img src="${m.image}" alt="preview" style="max-height:90px;border-radius:.5rem;margin-bottom:.5rem;display:block"/>` : ''}
+      ${field('Path foto (otomatis terisi setelah upload, boleh diisi manual)', m.image, 'image')}
       ${field('Alt text foto', m.imageAlt, 'imageAlt')}
       <label><input type="checkbox" data-k="featured" ${m.featured ? 'checked' : ''}/> Produk utama (tampil besar)</label>
       ${field('Urutan tampil', m.order, 'order')}
@@ -138,6 +143,26 @@ function renderMenu() {
     </div>`).join('') + `
     <button class="act btn-add" onclick="addMenu()">+ Tambah Produk</button>`;
 }
+async function uploadImage(slug, inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  const safe = file.name.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
+  const toastEl = document.getElementById('toast');
+  try {
+    const res = await fetch(`/admin/api/upload?name=${encodeURIComponent(safe)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const { path } = await res.json();
+    menuFiles[slug].image = path;
+    if (!menuFiles[slug].imageAlt) menuFiles[slug].imageAlt = file.name;
+    toast('Foto terupload ✓ — klik Simpan untuk menyimpan ke produk');
+    renderMenu();
+  } catch (e) { toast('Upload gagal: ' + e.message, true); }
+}
+
 async function saveMenu(slug) {
   const card = document.getElementById('card-' + slug);
   const m = menuFiles[slug];

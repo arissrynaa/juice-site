@@ -199,6 +199,28 @@ const server = http.createServer((req, res) => {
     });
   }
 
+  if (url.pathname === '/admin/api/upload' && req.method === 'POST') {
+    const sess = parseCookies(req).admin_session;
+    if (!verifyToken(sess)) { res.writeHead(401); return res.end('unauthorized'); }
+    const name = (url.searchParams.get('name') || '').toLowerCase();
+    if (!/^[a-z0-9][a-z0-9._-]{0,80}\.(png|jpe?g|webp|gif|svg)$/.test(name)) {
+      res.writeHead(400); return res.end('nama file tidak valid (huruf kecil/angka, ekstensi png/jpg/webp/gif/svg)');
+    }
+    const chunks = [];
+    let size = 0, tooBig = false;
+    req.on('data', (c) => { size += c.length; if (size > 5 * 1024 * 1024) { tooBig = true; req.destroy(); } else chunks.push(c); });
+    req.on('end', () => {
+      if (tooBig) return;
+      const dest = path.join(ROOT, 'public/images', name);
+      fs.writeFileSync(dest, Buffer.concat(chunks));
+      // dist/ ikut diisi supaya tidak wajib rebuild untuk preview
+      fs.copyFileSync(dest, path.join(DIST, 'images', name));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, path: '/images/' + name }));
+    });
+    return;
+  }
+
   // ---- gate semua /admin kecuali halaman login itu sendiri ----
   if (url.pathname.startsWith('/admin')) {
     if (url.pathname === '/admin/login' && req.method === 'GET') {
