@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex"/>
+<title>Admin — Fruits Juice R&F</title>
+<style>
+  :root { --brown:#78350F; --brown-dark:#5C280B; --cream:#FFFDF7; --border:#F0E8DC; --muted:#7C6F64; --green:#15803D; --red:#ba1a1a; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: var(--cream); color: #3D2E1E; margin: 0; padding: 2rem 1rem; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { color: var(--brown); font-size: 1.3rem; }
+  .tabs { display: flex; gap: .5rem; margin: 1rem 0; }
+  .tabs button { flex: 1; padding: .7rem; border: 1.5px solid var(--border); background: #fff; border-radius: .5rem; font-weight: 600; cursor: pointer; color: var(--muted); }
+  .tabs button.active { background: var(--brown); color: var(--cream); border-color: var(--brown); }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: .75rem; padding: 1.25rem; margin-bottom: 1rem; }
+  label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); margin: .8rem 0 .25rem; }
+  input, textarea { width: 100%; padding: .6rem; border: 1.5px solid #D8CFC4; border-radius: .5rem; font-size: .95rem; font-family: inherit; }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, textarea:focus { outline: none; border-color: var(--brown); }
+  button.act { padding: .6rem 1.2rem; border: 0; border-radius: .5rem; font-weight: 600; cursor: pointer; }
+  .btn-save { background: var(--green); color: #fff; }
+  .btn-del { background: #fdecea; color: var(--red); }
+  .btn-add { background: var(--brown); color: var(--cream); }
+  .row { display: flex; gap: .6rem; align-items: center; margin-bottom: .5rem; }
+  .row input { flex: 1; }
+  .toast { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; padding: .6rem 1.2rem; border-radius: .5rem; display: none; }
+  .toast.err { background: var(--red); }
+  .status { font-size: .8rem; color: var(--muted); }
+  a.logout { font-size: .85rem; color: var(--muted); float: right; }
+  .item-head { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Admin — Fruits Juice R&amp;F <a class="logout" href="/admin/logout">Keluar</a></h1>
+  <p class="status" id="status">Memuat…</p>
+  <div class="tabs">
+    <button id="tab-site" class="active" onclick="showTab('site')">Pengaturan Situs</button>
+    <button id="tab-menu" onclick="showTab('menu')">Menu Produk</button>
+  </div>
+  <div id="panel-site"></div>
+  <div id="panel-menu" style="display:none"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let site = null, menuFiles = {}; // menuFiles: {slug: data}
+
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  if (res.status === 302 || res.redirected) { location.href = '/admin/login'; throw new Error('redirect'); }
+  if (!res.ok) throw new Error((await res.text()) || res.status);
+  return res.json();
+}
+
+async function load() {
+  try {
+    const data = await api('/admin/api/content');
+    site = data.site; menuFiles = data.menu;
+    document.getElementById('status').textContent = 'Konten dimuat. Perubahan langsung ke file JSON — jalankan `npm run build` setelah selesai untuk update tampilan publik.';
+    renderSite(); renderMenu();
+  } catch (e) { if (e.message !== 'redirect') { document.getElementById('status').textContent = 'Gagal memuat: ' + e.message; } }
+}
+
+function field(label, value, key, textarea) {
+  return `<label>${label}</label>${textarea ? `<textarea data-k="${key}">${value ?? ''}</textarea>` : `<input data-k="${key}" value="${(value ?? '').toString().replace(/"/g, '&quot;')}"/>`}`;
+}
+
+// ---------- SITE ----------
+function renderSite() {
+  const p = document.getElementById('panel-site');
+  const scalars = ['brand','slogan','heroSub','heroImage','heroImageAlt','heroBadge','waLink','phoneDisplay','instagramUrl','instagramHandle','instagramBlurb','email','address','mapsEmbed','footerText','aboutTitle','aboutBody'];
+  p.innerHTML = `
+    <div class="card" id="card-site">
+      ${scalars.map(k => field(k, site[k], k, ['heroSub','instagramBlurb','address','aboutBody'].includes(k))).join('')}
+      <label>4 Keunggulan</label>
+      <div id="adv-list"></div>
+      <button class="act btn-add" onclick="addAdv()">+ Keunggulan</button>
+      <label>Langkah Cara Pesan</label>
+      <div id="step-list"></div>
+      <button class="act btn-add" onclick="addStep()">+ Langkah</button>
+      <p></p>
+      <button class="act btn-save" onclick="saveSite()">Simpan Pengaturan</button>
+    </div>`;
+  renderAdv(); renderStep();
+}
+function renderAdv() {
+  document.getElementById('adv-list').innerHTML = site.advantages.map((a, i) =>
+    `<div class="row" style="flex-wrap:wrap">
+      <input style="flex:0 0 90px" data-adv="${i}" data-f="icon" value="${a.icon}" placeholder="icon"/>
+      <input data-adv="${i}" data-f="title" value="${(a.title||'').replace(/"/g,'&quot;')}" placeholder="judul"/>
+      <input data-adv="${i}" data-f="desc" value="${(a.desc||'').replace(/"/g,'&quot;')}" placeholder="deskripsi"/>
+      <button class="act btn-del" onclick="delAdv(${i})">×</button>
+    </div>`).join('');
+}
+function addAdv(){ site.advantages.push({icon:'eco', title:'', desc:''}); renderAdv(); }
+function delAdv(i){ site.advantages.splice(i,1); renderAdv(); }
+function renderStep() {
+  document.getElementById('step-list').innerHTML = site.steps.map((s, i) =>
+    `<div class="row"><input data-step="${i}" value="${(s||'').replace(/"/g,'&quot;')}"/><button class="act btn-del" onclick="delStep(${i})">×</button></div>`).join('');
+}
+function addStep(){ site.steps.push(''); renderStep(); }
+function delStep(i){ site.steps.splice(i,1); renderStep(); }
+async function saveSite() {
+  document.querySelectorAll('#card-site [data-k]').forEach(el => site[el.dataset.k] = el.value);
+  document.querySelectorAll('[data-adv]').forEach(el => site.advantages[+el.dataset.adv][el.dataset.f] = el.value);
+  site.steps = [...document.querySelectorAll('[data-step]')].map(el => el.value);
+  try { await api('/admin/api/save', post({file: 'settings/site', data: site})); toast('Tersimpan ✓'); }
+  catch (e) { toast('Gagal: ' + e.message, true); }
+}
+function post(body) { return { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) }; }
+
+// ---------- MENU ----------
+function renderMenu() {
+  const p = document.getElementById('panel-menu');
+  p.innerHTML = Object.entries(menuFiles).map(([slug, m]) => `
+    <div class="card" id="card-${slug}">
+      <div class="item-head"><strong>${m.name || slug}</strong>
+        <button class="act btn-del" onclick="delMenu('${slug}')">Hapus</button></div>
+      ${field('Nama', m.name, 'name')}
+      ${field('Badge (Best Seller / Segera Hadir / kosong)', m.badge, 'badge')}
+      ${field('Deskripsi', m.description, 'description', true)}
+      ${field('Info Gizi', m.nutrition, 'nutrition')}
+      ${field('Harga (mis. Rp 13.000 — kosongkan jika belum final)', m.price, 'price')}
+      ${field('Foto (path /images/..., kosongkan jika pakai logo)', m.image, 'image')}
+      ${field('Alt text foto', m.imageAlt, 'imageAlt')}
+      <label><input type="checkbox" data-k="featured" ${m.featured ? 'checked' : ''}/> Produk utama (tampil besar)</label>
+      ${field('Urutan tampil', m.order, 'order')}
+      <p></p><button class="act btn-save" onclick="saveMenu('${slug}')">Simpan</button>
+    </div>`).join('') + `
+    <button class="act btn-add" onclick="addMenu()">+ Tambah Produk</button>`;
+}
+async function saveMenu(slug) {
+  const card = document.getElementById('card-' + slug);
+  const m = menuFiles[slug];
+  card.querySelectorAll('[data-k]').forEach(el => {
+    m[el.dataset.k] = el.type === 'checkbox' ? el.checked : (el.dataset.k === 'order' ? Number(el.value || 10) : el.value);
+  });
+  try { await api('/admin/api/save', post({file: 'menu/' + slug, data: m})); toast('Tersimpan ✓'); renderMenu(); }
+  catch (e) { toast('Gagal: ' + e.message, true); }
+}
+async function addMenu() {
+  const slug = prompt('Slug produk (tanpa spasi, mis. jus-mangga):');
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) { if (slug !== null) toast('Slug harus huruf kecil/angka/tanda minus', true); return; }
+  if (menuFiles[slug]) { toast('Slug sudah dipakai', true); return; }
+  menuFiles[slug] = { name: slug, badge: '', description: '', nutrition: '', price: 'Rp —', image: '', imageAlt: '', featured: false, order: 10 };
+  try { await api('/admin/api/save', post({file: 'menu/' + slug, data: menuFiles[slug]})); renderMenu(); toast('Produk dibuat ✓'); }
+  catch (e) { toast('Gagal: ' + e.message, true); }
+}
+async function delMenu(slug) {
+  if (!confirm('Hapus produk "' + (menuFiles[slug]?.name || slug) + '"?')) return;
+  try { await api('/admin/api/delete', post({file: 'menu/' + slug})); delete menuFiles[slug]; renderMenu(); toast('Terhapus ✓'); }
+  catch (e) { toast('Gagal: ' + e.message, true); }
+}
+
+// ---------- TABS ----------
+function showTab(t) {
+  document.getElementById('tab-site').classList.toggle('active', t === 'site');
+  document.getElementById('tab-menu').classList.toggle('active', t === 'menu');
+  document.getElementById('panel-site').style.display = t === 'site' ? '' : 'none';
+  document.getElementById('panel-menu').style.display = t === 'menu' ? '' : 'none';
+}
+
+load();
+</script>
+</body>
+</html>

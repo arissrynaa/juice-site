@@ -69,6 +69,14 @@ function parseCookies(req) {
   });
   return out;
 }
+function handleBody(req, res, fn, limit = 512 * 1024) {
+  let body = '';
+  req.on('data', (c) => { body += c; if (body.length > limit) req.destroy(); });
+  req.on('end', () => {
+    try { fn(JSON.parse(body || '{}')); }
+    catch (e) { res.writeHead(400); res.end('JSON tidak valid'); }
+  });
+}
 
 // --- rate limiting (per IP, sliding window) ---
 const attempts = new Map(); // ip -> {count, windowStart, blockedUntil}
@@ -143,6 +151,54 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ---- Admin editor (custom, tanpa Decap) ----
+  if (url.pathname === '/admin/logout') {
+    res.setHeader('Set-Cookie', 'admin_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
+    res.writeHead(302, { Location: '/admin/login' });
+    return res.end();
+  }
+  if (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname === '/admin/index.html') {
+    const sess = parseCookies(req).admin_session;
+    if (!verifyToken(sess)) { res.writeHead(302, { Location: '/admin/login' }); return res.end(); }
+    return serveFile(res, path.join(ROOT, 'scripts', 'admin.html'));
+  }
+  if (url.pathname === '/admin/api/content') {
+    const sess = parseCookies(req).admin_session;
+    if (!verifyToken(sess)) { res.writeHead(401); return res.end('unauthorized'); }
+    const menuDir = path.join(ROOT, 'src/content/menu');
+    const menu = {};
+    for (const f of fs.readdirSync(menuDir).filter(f => f.endsWith('.json'))) {
+      menu[f.replace(/\.json$/, '')] = JSON.parse(fs.readFileSync(path.join(menuDir, f), 'utf8'));
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ site: JSON.parse(fs.readFileSync(path.join(ROOT, 'src/content/settings/site.json'), 'utf8')), menu }));
+  }
+  if (url.pathname === '/admin/api/save' && req.method === 'POST') {
+    const sess = parseCookies(req).admin_session;
+    if (!verifyToken(sess)) { res.writeHead(401); return res.end('unauthorized'); }
+    return handleBody(req, res, ({ file, data }) => {
+      const m = /^(settings\/site|menu\/[a-z0-9-]+)$/.exec(file);
+      if (!m) { res.writeHead(400); return res.end('path tidak valid'); }
+      const dest = path.join(ROOT, 'src/content', file + '.json');
+      JSON.parse(JSON.stringify(data)); // validasi: harus JSON murni
+      fs.writeFileSync(dest, JSON.stringify(data, null, 2) + '\n');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+  }
+  if (url.pathname === '/admin/api/delete' && req.method === 'POST') {
+    const sess = parseCookies(req).admin_session;
+    if (!verifyToken(sess)) { res.writeHead(401); return res.end('unauthorized'); }
+    return handleBody(req, res, ({ file }) => {
+      const m = /^menu\/[a-z0-9-]+$/.exec(file);
+      if (!m) { res.writeHead(400); return res.end('hanya item menu yang bisa dihapus'); }
+      const dest = path.join(ROOT, 'src/content', file + '.json');
+      if (fs.existsSync(dest)) fs.unlinkSync(dest);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+  }
+
   // ---- gate semua /admin kecuali halaman login itu sendiri ----
   if (url.pathname.startsWith('/admin')) {
     if (url.pathname === '/admin/login' && req.method === 'GET') {
@@ -154,18 +210,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(302, { Location: '/admin/login' });
       return res.end();
     }
-    // config.yml diserve dinamis: local_backend diarahkan ke host yang dipakai user
-    // (jangan localhost kalau dibuka dari device lain via IP LAN)
-    if (url.pathname === '/admin/config.yml') {
-      fs.readFile(path.join(DIST, 'admin/config.yml'), 'utf8', (err, data) => {
-        if (err) { res.writeHead(404); return res.end('Not Found'); }
-        const rewritten = data.replace(/^local_backend: true$/m, `local_backend:\n  url: "http://${req.headers.host}/api/v1"`);
-        res.writeHead(200, { 'Content-Type': 'text/yaml', 'Cache-Control': 'no-store' });
-        res.end(rewritten);
-      });
-      return;
-    }
-    // lolos auth → serve file admin statis
+    // lolos auth → serve file admin statis (fallback; editor utama ditangani route di atas)
     const rel = url.pathname === '/admin' || url.pathname === '/admin/' ? '/admin/index.html' : url.pathname;
     return serveFile(res, path.join(DIST, rel));
   }
