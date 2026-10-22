@@ -1,26 +1,23 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/session";
-import { getContent, writeLocalContent } from "@/lib/content-local";
-import { fetchGithubContent, pushGithubContent } from "@/lib/github";
+import { blobConfigured, getContent, saveContent } from "@/lib/store";
 import type { Content } from "@/lib/types";
 
 async function isAuthed(): Promise<boolean> {
   const jar = await cookies();
-  return await verifySessionToken(jar.get(ADMIN_COOKIE)?.value);
+  return verifySessionToken(jar.get(ADMIN_COOKIE)?.value);
 }
 
 export async function GET() {
   if (!(await isAuthed())) {
     return NextResponse.json({ ok: false, why: "UNAUTHORIZED" }, { status: 401 });
   }
-  const local = await getContent();
-  const remote = await fetchGithubContent();
+  const content = await getContent();
   return NextResponse.json({
     ok: true,
-    content: remote ?? local,
-    source: remote ? "github" : "local",
-    githubEnabled: Boolean(process.env.GITHUB_TOKEN),
+    content,
+    store: blobConfigured() ? "blob" : "local",
   });
 }
 
@@ -39,22 +36,20 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: false, why: "INVALID_SHAPE" }, { status: 400 });
   }
 
-  await writeLocalContent(content);
-
-  let pushed = false;
-  let pushError: string | undefined;
   try {
-    pushed = await pushGithubContent(content);
+    const result = await saveContent(content);
+    return NextResponse.json({
+      ok: true,
+      store: result.where,
+      note:
+        result.where === "blob"
+          ? "Tersimpan. Perubahan langsung tayang di situs."
+          : "Tersimpan di disk lokal (dev mode).",
+    });
   } catch (err) {
-    pushError = err instanceof Error ? err.message : "push failed";
+    return NextResponse.json(
+      { ok: false, why: err instanceof Error ? err.message : "SAVE_FAILED" },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({
-    ok: true,
-    pushed,
-    pushError,
-    note: pushed
-      ? "Content disimpan dan di-commit ke GitHub. Rebuild Vercel berjalan otomatis."
-      : "Content disimpan lokal. Set GITHUB_TOKEN agar perubahan tayang otomatis.",
-  });
 }

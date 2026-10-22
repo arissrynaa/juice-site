@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/session";
-import { getContent } from "@/lib/content-local";
+import { getContent } from "@/lib/store";
 import AdminDashboard from "./AdminDashboard";
 
 export const dynamic = "force-dynamic";

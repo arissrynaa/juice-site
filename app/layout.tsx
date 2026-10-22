@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getContent } from "@/lib/content-local";
+import { getContent } from "@/lib/store";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {

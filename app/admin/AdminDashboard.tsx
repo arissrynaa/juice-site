@@ -35,7 +35,7 @@ export default function AdminDashboard({ initial }: { initial: Content }) {
     kind: "idle",
     msg: "",
   });
-  const [githubEnabled, setGithubEnabled] = useState(false);
+  const [storeMode, setStoreMode] = useState<"blob" | "local">("local");
 
   useEffect(() => {
     fetch("/api/admin/content")
@@ -44,7 +44,7 @@ export default function AdminDashboard({ initial }: { initial: Content }) {
         if (d?.ok && d.content) {
           setSite(d.content.site);
           setMenu(d.content.menu);
-          setGithubEnabled(Boolean(d.githubEnabled));
+          setStoreMode(d.store === "blob" ? "blob" : "local");
         }
       })
       .catch(() => {});
@@ -103,17 +103,12 @@ export default function AdminDashboard({ initial }: { initial: Content }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(content),
       });
-      const data = (await res.json()) as { ok: boolean; note?: string; pushError?: string };
+      const data = (await res.json()) as { ok: boolean; note?: string; why?: string };
       if (!data.ok) {
-        setStatus({ kind: "err", msg: "Gagal menyimpan." });
+        setStatus({ kind: "err", msg: `Gagal menyimpan: ${data.why ?? "unknown"}` });
         return;
       }
-      setStatus({
-        kind: "ok",
-        msg: data.pushError
-          ? `Tersimpan lokal, tapi push GitHub gagal: ${data.pushError}`
-          : (data.note ?? "Tersimpan."),
-      });
+      setStatus({ kind: "ok", msg: data.note ?? "Tersimpan." });
     } catch {
       setStatus({ kind: "err", msg: "Gagal menghubungi server." });
     }
@@ -132,7 +127,7 @@ export default function AdminDashboard({ initial }: { initial: Content }) {
           <div>
             <h1 className="font-headline font-bold text-primary leading-tight">Admin Dashboard</h1>
             <p className="text-xs text-muted">
-              {githubEnabled ? "Content source: GitHub (auto-rebuild Vercel)" : "Content source: lokal (set GITHUB_TOKEN untuk auto-publish)"}
+              {storeMode === "blob" ? "Penyimpanan: Vercel Blob - perubahan langsung tayang" : "Penyimpanan: lokal (dev)"}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -370,6 +365,15 @@ function MediaPanel() {
   const [files, setFiles] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/upload")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.ok && Array.isArray(d.images)) setFiles(d.images);
+      })
+      .catch(() => {});
+  }, []);
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

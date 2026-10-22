@@ -1,11 +1,11 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/session";
-import { uploadImage } from "@/lib/upload";
+import { listImages, uploadImage } from "@/lib/store";
 
 export async function POST(request: Request) {
   const jar = await cookies();
-  if (!await verifySessionToken(jar.get(ADMIN_COOKIE)?.value)) {
+  if (!(await verifySessionToken(jar.get(ADMIN_COOKIE)?.value))) {
     return NextResponse.json({ ok: false, why: "UNAUTHORIZED" }, { status: 401 });
   }
 
@@ -23,10 +23,21 @@ export async function POST(request: Request) {
   if (!filename || !match) {
     return NextResponse.json({ ok: false, why: "INVALID_IMAGE" }, { status: 400 });
   }
+  if (match[1].length > 8 * 1024 * 1024) {
+    return NextResponse.json({ ok: false, why: "FILE_TOO_LARGE" }, { status: 413 });
+  }
 
   const result = await uploadImage(filename, match[1]);
   if (!result.ok) {
     return NextResponse.json({ ok: false, why: result.why }, { status: 502 });
   }
-  return NextResponse.json({ ok: true, url: `/images/${filename.replace(/[^a-zA-Z0-9._-]/g, "-")}` });
+  return NextResponse.json({ ok: true, url: result.url });
+}
+
+export async function GET() {
+  const jar = await cookies();
+  if (!(await verifySessionToken(jar.get(ADMIN_COOKIE)?.value))) {
+    return NextResponse.json({ ok: false, why: "UNAUTHORIZED" }, { status: 401 });
+  }
+  return NextResponse.json({ ok: true, images: await listImages() });
 }

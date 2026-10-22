@@ -1,9 +1,10 @@
-import { getContent } from "@/lib/content-local";
+import { getContent } from "@/lib/store";
 import { Header, MobileHeader } from "@/components/Header";
 import { About, Hero } from "@/components/Hero";
 import { ContactSection, Footer, HowToOrder, InstagramSection, MenuSection } from "@/components/Sections";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const { site, menu } = await getContent();
