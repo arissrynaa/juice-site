@@ -1,0 +1,46 @@
+{
+  "brand": "Fruits Juice R&F",
+  "slogan": "Segar, Sehat, dan Mengenyangkan!",
+  "heroSub": "Nikmati sensasi kelezatan alpukat segar pilihan dengan paduan susu dan lumeran cokelat. Solusi dahaga yang kaya khasiat untuk cerahkan harimu.",
+  "heroImage": "/images/1000296305.jpg",
+  "heroImageAlt": "Logo Fruits Juice R&F — monogram RF (R hijau, F oranye) dihias irisan jeruk dan nanas",
+  "heroBadge": "Pre-Order H-1 · SMKN 1 Setu",
+  "waLink": "https://wa.me/6289676624139?text=Halo%20Fruits%20Juice%20R%26F%2C%20saya%20mau%20pesan",
+  "phoneDisplay": "0896-7662-4139",
+  "instagramUrl": "https://instagram.com/rmfruitjuice.id",
+  "instagramHandle": "@rmfruitjuice.id",
+  "instagramBlurb": "Update menu, promo, dan keseruan di balik layar — follow @rmfruitjuice.id",
+  "email": "rmfruitsjuiceofficial@gmail.com",
+  "address": "SMK Negeri 1 Setu, Jl. MT. Haryono No.71A, Ciledug, Kec. Setu, Kabupaten Bekasi, Jawa Barat 17320",
+  "mapsEmbed": "https://www.google.com/maps?q=SMK+Negeri+1+Setu,+Jl.+MT.+Haryono+No.71A,+Ciledug,+Kec.+Setu,+Kabupaten+Bekasi,+Jawa+Barat&output=embed",
+  "footerText": "© Fruits Juice R&F — Segar, Sehat, dan Mengenyangkan!",
+  "aboutTitle": "Tentang Kami",
+  "aboutBody": "Fruits Juice R&F adalah usaha minuman sehat yang lahir dari lingkungan SMKN 1 Setu. Kami berkomitmen menghadirkan pilihan minuman bernutrisi yang tetap lezat dan cocok dinikmati tiap hari.",
+  "advantages": [
+    {
+      "icon": "nutrition",
+      "title": "100% buah alpukat segar pilihan",
+      "desc": "Dipilih dari alpukat matang alami, tanpa perisa buatan."
+    },
+    {
+      "icon": "eco",
+      "title": "Kaya khasiat — lemak tak jenuh tunggal, serat, vitamin, dan mineral",
+      "desc": "Baik dikonsumsi max H+2, selalu diolah fresh."
+    },
+    {
+      "icon": "icecream",
+      "title": "Perpaduan pas susu kental manis dan cokelat berkualitas",
+      "desc": "Manis dan gurih yang seimbang."
+    },
+    {
+      "icon": "local_drink",
+      "title": "Dikemas higienis, ukuran 350 ml yang praktis dibawa",
+      "desc": "Cup tertutup aman, siap dibawa ke mana saja."
+    }
+  ],
+  "steps": [
+    "Klik tombol WhatsApp di bawah",
+    "Sebutkan nama, jumlah pesanan, dan waktu pengambilan/pengiriman",
+    "Konfirmasi — pesanan segera disiapkan"
+  ]
+}
