@@ -18,7 +18,6 @@ const TEXT_FIELDS: Array<{ key: keyof SiteSettings; label: string; type?: "text"
   { key: "instagramUrl", label: "Instagram URL" },
   { key: "instagramHandle", label: "Instagram Handle" },
   { key: "instagramBlurb", label: "Instagram Blurb", type: "textarea" },
-  { key: "email", label: "Email" },
   { key: "address", label: "Alamat", type: "textarea" },
   { key: "mapsEmbed", label: "Google Maps Embed URL", type: "textarea" },
   { key: "footerText", label: "Footer Text" },

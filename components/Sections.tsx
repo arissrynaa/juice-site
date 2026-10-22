@@ -140,12 +140,14 @@ export function ContactSection({ site }: { site: SiteSettings }) {
                 <p className="font-semibold text-primary">Alamat</p>
                 <p className="text-sm text-muted">{site.address}</p>
               </li>
+              {site.email && (
               <li className="bg-white border border-card-border rounded-lg p-4">
                 <p className="font-semibold text-primary">Email</p>
                 <a href={`mailto:${site.email}`} className="text-sm text-secondary hover:underline break-all">
                   {site.email}
                 </a>
               </li>
+              )}
               <li className="bg-white border border-card-border rounded-lg p-4">
                 <p className="font-semibold text-primary">WhatsApp</p>
                 <a
