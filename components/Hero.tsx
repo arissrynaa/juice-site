@@ -2,7 +2,7 @@ import type { MenuItem, SiteSettings } from "@/lib/types";
 
 export function Hero({ site, featured }: { site: SiteSettings; featured?: MenuItem }) {
   return (
-    <section id="hero" className="w-full bg-gradient-to-b from-surface to-surface-container pt-24 md:pt-32 pb-16 lg:py-24">
+    <section id="hero" className="w-full bg-gradient-to-b from-surface to-surface-container pt-20 md:pt-28 pb-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-5 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-7">
           {site.heroBadge && (
