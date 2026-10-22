@@ -18,11 +18,11 @@ export function MenuSection({ menu }: { menu: MenuItem[] }) {
             <article className="lg:col-span-2 bg-white border border-card-border rounded-xl p-6 shadow-lift">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
                 {featured.image && (
-                  <div className="rounded-lg overflow-hidden bg-surface-container h-56">
+                  <div className="rounded-lg overflow-hidden bg-surface-container aspect-[4/5]">
                     <img
                       src={featured.image}
                       alt={featured.imageAlt || featured.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                     />
                   </div>
                 )}
@@ -47,6 +47,15 @@ export function MenuSection({ menu }: { menu: MenuItem[] }) {
               key={item.id}
               className="bg-surface-container rounded-xl border border-surface-border p-6 flex flex-col justify-between"
             >
+              {item.image && (
+                <div className="rounded-lg overflow-hidden bg-white mb-4 aspect-[4/5]">
+                  <img
+                    src={item.image}
+                    alt={item.imageAlt || item.name}
+                    className="w-full h-full object-cover object-center"
+                  />
+                </div>
+              )}
               <div>
                 {item.badge && (
                   <span className="inline-block px-2.5 py-1 rounded-full bg-white text-muted text-xs font-semibold mb-3">

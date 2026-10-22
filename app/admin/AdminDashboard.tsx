@@ -360,10 +360,54 @@ export default function AdminDashboard({ initial }: { initial: Content }) {
   );
 }
 
+type Ratio = "4:5" | "1:1" | "16:9";
+
+const RATIOS: Array<{ id: Ratio; label: string; w: number; h: number; hint: string }> = [
+  { id: "4:5", label: "4:5", w: 4, h: 5, hint: "Foto produk utama - portrait" },
+  { id: "1:1", label: "1:1", w: 1, h: 1, hint: "Thumbnail / varian - square" },
+  { id: "16:9", label: "16:9", w: 16, h: 9, hint: "Banner / hero - landscape" },
+];
+
+function cropToRatio(
+  src: HTMLImageElement,
+  targetW: number,
+  targetH: number,
+): string {
+  const srcRatio = src.naturalWidth / src.naturalHeight;
+  const dstRatio = targetW / targetH;
+
+  let sw = src.naturalWidth;
+  let sh = src.naturalHeight;
+  let sx = 0;
+  let sy = 0;
+
+  if (srcRatio > dstRatio) {
+    sw = src.naturalHeight * dstRatio;
+    sx = (src.naturalWidth - sw) / 2;
+  } else {
+    sh = src.naturalWidth / dstRatio;
+    sy = (src.naturalHeight - sh) / 2;
+  }
+
+  const maxSide = 1600;
+  const outW = Math.round(Math.min(targetW * 600, maxSide));
+  const outH = Math.round(outW / dstRatio);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, sx, sy, sw, sh, 0, 0, outW, outH);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
 function MediaPanel() {
   const [files, setFiles] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [ratio, setRatio] = useState<Ratio>("4:5");
 
   useEffect(() => {
     fetch("/api/admin/upload")
@@ -379,14 +423,34 @@ function MediaPanel() {
     if (!file) return;
     setBusy(true);
     setMsg("");
+
+    const target = RATIOS.find((r) => r.id === ratio) ?? RATIOS[0];
     const reader = new FileReader();
+
     reader.onload = async () => {
       try {
         const dataUrl = String(reader.result);
+        let payload = dataUrl;
+        let filename = file.name;
+
+        try {
+          const img = new Image();
+          img.src = dataUrl;
+          await img.decode();
+          const cropped = cropToRatio(img, target.w, target.h);
+          if (cropped) {
+            payload = cropped;
+            const base = file.name.replace(/\.[^.]+$/, "");
+            filename = `${base}-${target.id.replace(":", "x")}.jpg`;
+          }
+        } catch {
+          // crop gagal, pakai file asli
+        }
+
         const res = await fetch("/api/admin/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename: file.name, dataUrl }),
+          body: JSON.stringify({ filename, dataUrl: payload }),
         });
         const data = (await res.json()) as { ok: boolean; url?: string; why?: string };
         if (data.ok && data.url) {
@@ -408,8 +472,33 @@ function MediaPanel() {
     <section className="bg-white border border-card-border rounded-xl p-5">
       <h2 className="font-semibold text-primary mb-1">Upload Gambar</h2>
       <p className="text-sm text-muted mb-4">
-        Format PNG/JPG, maks 5MB. File masuk ke folder images. Salin path-nya ke kolom gambar produk.
+        File otomatis dikrop ke rasio terpilih (potong tengah). Maks 5MB. Salin path-nya ke kolom gambar produk.
       </p>
+
+      <div className="mb-4">
+        <span className="label">Rasio Crop</span>
+        <div className="flex flex-wrap gap-2">
+          {RATIOS.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => setRatio(r.id)}
+              title={r.hint}
+              className={`px-3 py-1.5 text-sm font-semibold rounded-full border transition-colors ${
+                ratio === r.id
+                  ? "bg-primary text-surface border-primary"
+                  : "bg-surface-container text-muted border-card-border hover:text-primary"
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted mt-2">
+          {RATIOS.find((r) => r.id === ratio)?.hint}
+        </p>
+      </div>
+
       <input
         type="file"
         accept="image/png,image/jpeg,image/webp"
@@ -419,12 +508,13 @@ function MediaPanel() {
       />
       {busy && <p className="text-sm text-muted mt-3">Mengunggah...</p>}
       {msg && <p className="text-sm text-secondary mt-3 break-all">{msg}</p>}
+
       {files.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
           {files.map((url) => (
             <figure key={url} className="border border-card-border rounded-lg overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt={url} className="w-full h-24 object-cover bg-surface-container" />
+              <img src={url} alt={url} className="w-full h-28 object-cover object-center bg-surface-container" />
               <figcaption className="text-[10px] p-1.5 text-muted break-all">{url}</figcaption>
             </figure>
           ))}
